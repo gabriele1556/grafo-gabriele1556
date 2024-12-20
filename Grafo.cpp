@@ -1,4 +1,5 @@
 #include <iostream>
+
 #define MAX_NODI 100
 #define INF 1000000000 // Rappresenta l'assenza di connessione
 
@@ -22,7 +23,7 @@ public:
         }
     }
 
-    // Aggiunge un nodo al grafo, in input viene inserito il valore che rappresenta quel nodo (es. nome della cittá)
+    // Aggiunge un nodo al grafo
     void aggiungiNodo(const T& nodo) {
         if (numeroNodi >= MAX_NODI) {
             std::cout << "Errore: numero massimo di nodi raggiunto.\n";
@@ -39,7 +40,7 @@ public:
         numeroNodi++;
     }
 
-    // Aggiunge un arco tra due nodi dando in input i nomi dei nodi e il peso del loro arco
+    // Aggiunge un arco tra due nodi
     void aggiungiArco(const T& sorgente, const T& destinazione, int peso) {
         int indiceSorgente = trovaIndice(sorgente);
         int indiceDestinazione = trovaIndice(destinazione);
@@ -51,7 +52,7 @@ public:
         matriceAdiacenza[indiceSorgente][indiceDestinazione] = peso;
     }
 
-    // Rimuove un nodo dando in input il nome del nodo
+    // Rimuove un nodo e tutti i suoi archi
     void rimuoviNodo(const T& nodo) {
         int indice = trovaIndice(nodo);
         if (indice == -1) {
@@ -65,7 +66,7 @@ public:
         }
     }
 
-    // Rimuove un arco tra due nodi dando in input il nome del nodo di partenza e del nodo di arrivo
+    // Rimuove un arco
     void rimuoviArco(const T& sorgente, const T& destinazione) {
         int indiceSorgente = trovaIndice(sorgente);
         int indiceDestinazione = trovaIndice(destinazione);
@@ -77,20 +78,91 @@ public:
         matriceAdiacenza[indiceSorgente][indiceDestinazione] = INF;
     }
 
-    // Restituisce i nodi adiacenti a un dato nodo
-    void nodiAdiacenti(const T& nodo) const {
+    // Verifica se due nodi sono connessi
+    bool sonoConnessi(const T& nodo1, const T& nodo2) {
+        int indice1 = trovaIndice(nodo1);
+        int indice2 = trovaIndice(nodo2);
+        if (indice1 == -1 || indice2 == -1) return false;
+
+        // Se esiste un arco diretto tra i due nodi
+        return matriceAdiacenza[indice1][indice2] != INF;
+    }
+
+    // Trova l'arco con il peso minore tra gli archi uscenti da un nodo
+    void arcoMinimo(const T& nodo) {
         int indice = trovaIndice(nodo);
         if (indice == -1) {
             std::cout << "Errore: il nodo non esiste.\n";
             return;
         }
-        std::cout << "Nodi adiacenti a " << nodo << ": ";
+
+        int minPeso = INF;
+        int minIndice = -1;
         for (int i = 0; i < numeroNodi; ++i) {
-            if (esisteNodo[i] && matriceAdiacenza[indice][i] != INF) {
-                std::cout << nodi[i] << " (peso: " << matriceAdiacenza[indice][i] << ") ";
+            if (matriceAdiacenza[indice][i] != INF && matriceAdiacenza[indice][i] < minPeso) {
+                minPeso = matriceAdiacenza[indice][i];
+                minIndice = i;
             }
         }
-        std::cout << "\n";
+
+        if (minIndice != -1) {
+            std::cout << "L'arco con peso minore uscenti da " << nodo << " è " << nodi[minIndice] << " (peso: " << minPeso << ")\n";
+        } else {
+            std::cout << "Non ci sono archi uscenti da " << nodo << ".\n";
+        }
+    }
+
+    // Dijkstra per il cammino minimo da un nodo di partenza
+    void dijkstra(const T& nodoPartenza) {
+        int indicePartenza = trovaIndice(nodoPartenza);
+        if (indicePartenza == -1) {
+            std::cout << "Nodo di partenza non esistente.\n";
+            return;
+        }
+
+        int distanze[MAX_NODI];
+        bool visitato[MAX_NODI];
+        
+        // Inizializzo le distanze con INF e i nodi come non visitati
+        for (int i = 0; i < numeroNodi; ++i) {
+            distanze[i] = INF;
+            visitato[i] = false;
+        }
+        distanze[indicePartenza] = 0;
+
+        for (int i = 0; i < numeroNodi; ++i) {
+            int nodoMinimo = -1;
+            // Trovo il nodo con la distanza minima non visitato
+            for (int j = 0; j < numeroNodi; ++j) {
+                if (!visitato[j] && (nodoMinimo == -1 || distanze[j] < distanze[nodoMinimo])) {
+                    nodoMinimo = j;
+                }
+            }
+
+            if (distanze[nodoMinimo] == INF) break; // Tutti i nodi raggiungibili sono stati visitati
+
+            visitato[nodoMinimo] = true;
+
+            // Aggiorno le distanze dei nodi adiacenti
+            for (int j = 0; j < numeroNodi; ++j) {
+                if (matriceAdiacenza[nodoMinimo][j] != INF) {
+                    int nuovaDist = distanze[nodoMinimo] + matriceAdiacenza[nodoMinimo][j];
+                    if (nuovaDist < distanze[j]) {
+                        distanze[j] = nuovaDist;
+                    }
+                }
+            }
+        }
+
+        // Stampa i cammini minimi
+        std::cout << "Cammini minimi da " << nodoPartenza << ":\n";
+        for (int i = 0; i < numeroNodi; ++i) {
+            if (distanze[i] == INF) {
+                std::cout << nodi[i] << ": INFINITO\n";
+            } else {
+                std::cout << nodi[i] << ": " << distanze[i] << "\n";
+            }
+        }
     }
 
     // Stampa la matrice di adiacenza
@@ -127,7 +199,7 @@ public:
         }
         return matriceAdiacenza[indiceSorgente][indiceDestinazione] != INF;
     }
-    
+
 private:
     // Trova l'indice di un nodo
     int trovaIndice(const T& nodo) const {
@@ -139,3 +211,4 @@ private:
         return -1;
     }
 };
+
